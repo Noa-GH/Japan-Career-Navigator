@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --open",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.110.0",
     "@prisma/client": "5.19",
     "@supabase/supabase-js": "^2.110.1",
+    "dotenv": "^17.4.2",
     "next": "^16.2.10",
     "prisma": "5.19",
     "react": "^19.2.7",

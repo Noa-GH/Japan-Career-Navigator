@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import Anthropic from "@anthropic-ai/sdk";
 
 // Define the schema for what Claude will extract
@@ -37,9 +39,7 @@ interface ResumeAnalysisResult {
 export async function analyzeResume(
     resumeText: string
 ): Promise<ResumeAnalysisResult> {
-    const client = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
-    });
+    const client = new Anthropic();
 
     const message = await client.messages.create({
         model: "claude-sonnet-4-6",
