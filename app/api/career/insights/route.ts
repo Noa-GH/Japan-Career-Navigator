@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 Resume Profile:
 Years of Experience: ${resume.yearsOfExperience}
 Education: ${resume.educationLevel}
-Skills: ${resume.skillTags.join(", ")}
+Skills: ${JSON.parse(resume.skillTags).join(", ")}
 Japanese Level: ${resume.jlptLevel || "Not mentioned"}
 
 Matched Jobs:
@@ -101,12 +101,12 @@ Provide: insight (brief career pathway), nextSteps (array of 3-5 actions), estim
 
         const insightData = JSON.parse(textContent.text);
 
-        // Store insights in database
+        // Store insights in database (stringify the nextSteps array)
         const careerInsight = await prisma.careerInsight.create({
             data: {
                 userId,
                 insight: insightData.insight,
-                nextSteps: insightData.nextSteps,
+                nextSteps: JSON.stringify(insightData.nextSteps), // Convert array to JSON string
                 estimatedTimeline: insightData.estimatedTimeline,
             },
         });
@@ -117,7 +117,7 @@ Provide: insight (brief career pathway), nextSteps (array of 3-5 actions), estim
                 data: {
                     insightId: careerInsight.id,
                     insight: careerInsight.insight,
-                    nextSteps: careerInsight.nextSteps,
+                    nextSteps: JSON.parse(careerInsight.nextSteps), // Parse back to array
                     estimatedTimeline: careerInsight.estimatedTimeline,
                 },
             },

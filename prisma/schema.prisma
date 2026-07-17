@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -27,7 +27,8 @@ model Resume {
   content           String // Raw resume text/JSON
   yearsOfExperience Int?
   educationLevel    String? // Bachelor's, Master's, PhD, etc.
-  skillTags         String[] // Array of skills
+  skillTags         String // Array of skills | Temp set to JSON for local db storing w/ SQlite
+  jlptLevel         String? // Japanese proficiency level
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -61,7 +62,7 @@ model JobInsight {
   skillMatch          Float? // Percentage match 0-100
   visaPath            String? // Analysis of visa eligibility
   languageRequirement String? // Required JLPT level analysis
-  keySkillsNeeded     String[] // Extracted skills from job
+  keySkillsNeeded     String // Extracted skills from job | Temp set to JSON for storing in local db w/ SQlite
   careerProgression   String? // Career growth potential
 
   createdAt DateTime @default(now())
@@ -91,7 +92,7 @@ model CareerInsight {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   insight           String // Claude-generated career pathway/recommendation
-  nextSteps         String[] // Actionable recommendations
+  nextSteps         String // Actionable recommendations | Temp set to JSON for storing local db w/ SQlite
   estimatedTimeline String? // "6 months", "1 year", etc.
 
   createdAt DateTime @default(now())

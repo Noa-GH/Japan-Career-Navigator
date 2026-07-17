@@ -37,6 +37,9 @@ export async function POST(request: NextRequest) {
             throw new NotFoundError("JobListing");
         }
 
+        // Parse skills array from JSON string
+        const skills = JSON.parse(resume.skillTags);
+
         // Call Claude to match resume to job
         const client = new Anthropic();
 
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
 Resume:
 Years of Experience: ${resume.yearsOfExperience}
 Education Level: ${resume.educationLevel}
-Skills: ${resume.skillTags.join(", ")}
+Skills: ${skills.join(", ")}
 Japanese Level: ${resume.jlptLevel || "Not mentioned"}
 
 Job Listing:

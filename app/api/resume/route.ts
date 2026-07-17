@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
                 content: resumeText,
                 yearsOfExperience: analysisResult.yearsOfExperience,
                 educationLevel: analysisResult.educationLevel,
-                skillTags: analysisResult.skills,
+                skillTags: JSON.stringify(analysisResult.skills),
                 jlptLevel: analysisResult.jlptLevel,
             },
             create: {
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
                 content: resumeText,
                 yearsOfExperience: analysisResult.yearsOfExperience,
                 educationLevel: analysisResult.educationLevel,
-                skillTags: analysisResult.skills,
+                skillTags: JSON.stringify(analysisResult.skills),
                 jlptLevel: analysisResult.jlptLevel,
             },
         });
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
                     resumeId: resume.id,
                     yearsOfExperience: resume.yearsOfExperience,
                     educationLevel: resume.educationLevel,
-                    skills: resume.skillTags,
+                    skills: JSON.stringify(resume.skillTags),
                     jlptLevel: resume.jlptLevel,
                 },
             },
