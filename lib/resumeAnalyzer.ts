@@ -60,8 +60,10 @@ Extract:
             },
         ],
         output_config: {
-            type: "json_schema",
-            schema: resumeSchema,
+            format: {
+                type: "json_schema",
+                schema: resumeSchema,
+            },
         } as any, // TypeScript SDK types might not be fully updated yet
     });
 

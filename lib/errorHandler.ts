@@ -4,7 +4,7 @@ export class APIError extends Error {
     constructor(
         public statusCode: number,
         public message: string,
-        public details?: any
+        public details?: unknown
     ) {
         super(message);
         this.name = "APIError";
@@ -12,7 +12,7 @@ export class APIError extends Error {
 }
 
 export class ValidationError extends APIError {
-    constructor(message: string, details?: any) {
+    constructor(message: string, details?: unknown) {
         super(400, message, details);
         this.name = "ValidationError";
     }
@@ -26,7 +26,7 @@ export class NotFoundError extends APIError {
 }
 
 export class InternalServerError extends APIError {
-    constructor(message: string, details?: any) {
+    constructor(message: string, details?: unknown) {
         super(500, message, details);
         this.name = "InternalServerError";
     }

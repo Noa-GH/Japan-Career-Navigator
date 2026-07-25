@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
                     resumeId: resume.id,
                     yearsOfExperience: resume.yearsOfExperience,
                     educationLevel: resume.educationLevel,
-                    skills: JSON.stringify(resume.skillTags),
+                    skills: JSON.parse(resume.skillTags),
                     jlptLevel: resume.jlptLevel,
                 },
             },

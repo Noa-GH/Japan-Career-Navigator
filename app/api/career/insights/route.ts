@@ -89,8 +89,10 @@ Provide: insight (brief career pathway), nextSteps (array of 3-5 actions), estim
                 },
             ],
             output_config: {
-                type: "json_schema",
-                schema: insightsSchema,
+                format: {
+                    type: "json_schema",
+                    schema: insightsSchema,
+                },
             } as any,
         });
 

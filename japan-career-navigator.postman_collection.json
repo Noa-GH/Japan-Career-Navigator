@@ -1,0 +1,150 @@
+{
+    "info": {
+        "name": "Japan Career Navigator API",
+        "description": "Requests for the resume analysis, job matching, and career insight endpoints. Run 'npx tsx scripts/seed.ts' first, and set {{userId}} / {{jobListingId}} from its console output (or from Supabase Studio at http://127.0.0.1:54323).",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        { "key": "baseUrl", "value": "http://localhost:3000" },
+        { "key": "userId", "value": "test-user-001" },
+        { "key": "jobListingId", "value": "" }
+    ],
+    "item": [
+        {
+            "name": "Resume",
+            "item": [
+                {
+                    "name": "Analyze resume - happy path",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"resumeText\": \"Software engineer with 5 years of experience building full-stack web applications using React, Node.js, and PostgreSQL. Bachelor's degree in Computer Science. JLPT N3 certified.\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/resume", "host": ["{{baseUrl}}"], "path": ["api", "resume"] }
+                    }
+                },
+                {
+                    "name": "Analyze resume - missing resumeText (400)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{userId}}\"\n}" },
+                        "url": { "raw": "{{baseUrl}}/api/resume", "host": ["{{baseUrl}}"], "path": ["api", "resume"] }
+                    }
+                },
+                {
+                    "name": "Analyze resume - resumeText too short (400)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"resumeText\": \"too short\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/resume", "host": ["{{baseUrl}}"], "path": ["api", "resume"] }
+                    }
+                },
+                {
+                    "name": "Analyze resume - unknown user (400)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"does-not-exist\",\n  \"resumeText\": \"Software engineer with 5 years of experience building full-stack web applications using React, Node.js, and PostgreSQL.\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/resume", "host": ["{{baseUrl}}"], "path": ["api", "resume"] }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Jobs",
+            "item": [
+                {
+                    "name": "Match resume to job - happy path",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"jobListingId\": \"{{jobListingId}}\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/jobs/match", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "match"] }
+                    }
+                },
+                {
+                    "name": "Match - missing jobListingId (400)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{userId}}\"\n}" },
+                        "url": { "raw": "{{baseUrl}}/api/jobs/match", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "match"] }
+                    }
+                },
+                {
+                    "name": "Match - user has no resume (400)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"user-with-no-resume\",\n  \"jobListingId\": \"{{jobListingId}}\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/jobs/match", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "match"] }
+                    }
+                },
+                {
+                    "name": "Match - unknown job listing (404)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"jobListingId\": \"does-not-exist\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/jobs/match", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "match"] }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Career Insights",
+            "item": [
+                {
+                    "name": "Generate insights - happy path",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{userId}}\"\n}" },
+                        "url": { "raw": "{{baseUrl}}/api/career/insights", "host": ["{{baseUrl}}"], "path": ["api", "career", "insights"] }
+                    }
+                },
+                {
+                    "name": "Insights - missing userId (400)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": { "mode": "raw", "raw": "{}" },
+                        "url": { "raw": "{{baseUrl}}/api/career/insights", "host": ["{{baseUrl}}"], "path": ["api", "career", "insights"] }
+                    }
+                },
+                {
+                    "name": "Insights - no job matches yet (400)",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/career/insights", "host": ["{{baseUrl}}"], "path": ["api", "career", "insights"] },
+                        "description": "Run this against a user that has a resume but has not been matched to any jobs yet."
+                    }
+                }
+            ]
+        }
+    ]
+}

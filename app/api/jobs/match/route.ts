@@ -88,8 +88,10 @@ Analyze the match. Return matchScore (0-100), matchReasoning (brief), and visaEl
                 },
             ],
             output_config: {
-                type: "json_schema",
-                schema: matchingSchema,
+                format: {
+                    type: "json_schema",
+                    schema: matchingSchema,
+                },
             } as any,
         });
 
