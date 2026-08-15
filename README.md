@@ -16,7 +16,7 @@ This project helps foreign professionals navigate the Japanese job market by:
 - **Framework**: Next.js 16.2.10 (App Router)
 - **Frontend**: React 19.2.7, TypeScript
 - **Styling**: TailwindCSS 3.4
-- **Database**: SQLite (local development) with Prisma ORM 5.19
+- **Database**: PostgreSQL (via local Supabase stack) with Prisma ORM 5.19
 - **AI**: Anthropic Claude API (claude-sonnet-4-6)
 - **Validation**: Zod 4.4.3
 - **Script Execution**: tsx 4.23.0
@@ -37,6 +37,13 @@ This project helps foreign professionals navigate the Japanese job market by:
 - Database seeding script (`scripts/seed.ts`) for test data generation
 - Resume analyzer test script (`scripts/test-resume-analyzer.ts`) for standalone testing
 - Test user and sample job listings for API testing
+- Vitest suite covering all three API routes (`npm test`)
+
+**Frontend UI (dev-build test harness)**
+
+- Single-page dashboard (`app/page.tsx` + `app/ui/dashboard.tsx`) exercising all three API endpoints: resume analysis, per-job matching, and career insights generation
+- Job listings are read directly from the database in a Server Component; mutations go through the real API routes via `fetch`
+- Deliberately minimal styling — this is a working end-to-end harness, not a final design. See `docs/CHANGELOG.md` for details.
 
 **AI-Powered Endpoints**
 
@@ -62,11 +69,10 @@ This project helps foreign professionals navigate the Japanese job market by:
 
 ### 🚧 In Progress / Planned Features
 
-**Frontend UI**
+**Frontend UI polish**
 
-- Dashboard for viewing resume analysis results
-- Job browsing and matching interface
-- Career insights visualization
+- Replace the current mocked-up dashboard with a real design system
+- Multi-page navigation instead of a single scrolling page
 - User profile management
 
 **Job Data Ingestion**
@@ -90,9 +96,9 @@ This project helps foreign professionals navigate the Japanese job market by:
 
 ## Database Schema
 
-The application uses SQLite for local development with the following key relationships:
+The application uses PostgreSQL (a local Supabase stack in development) with the following key relationships:
 
-**Note**: Array fields (skillTags, keySkillsNeeded, nextSteps) are stored as JSON strings to accommodate SQLite limitations.
+**Note**: Array fields (skillTags, keySkillsNeeded, nextSteps) are stored as JSON strings — a holdover from an earlier SQLite-backed iteration — and parsed/stringified at the API boundary rather than using native array columns.
 
 - **User** → Resume (one-to-one)
 - **User** → JobMatch (one-to-many)
@@ -104,7 +110,7 @@ The application uses SQLite for local development with the following key relatio
 
 Required environment variables (see `.env` for reference):
 
-- `DATABASE_URL` - SQLite connection string (default: `file:./dev.db`)
+- `DATABASE_URL` - PostgreSQL connection string (local Supabase default: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`)
 - `ANTHROPIC_API_KEY` - Claude API key for AI features
 
 ## Getting Started
@@ -113,7 +119,7 @@ Required environment variables (see `.env` for reference):
 
 - Node.js 20+
 - Anthropic API key
-- SQLite (included with Prisma)
+- Docker Desktop (for the local Supabase/Postgres stack)
 
 ### Installation
 
@@ -124,11 +130,14 @@ npm install
 ### Database Setup
 
 ```bash
+# Start local Supabase (Postgres) — requires Docker Desktop running
+npx supabase start
+
 # Generate Prisma client
 npx prisma generate
 
-# Run migrations (creates SQLite database)
-npx prisma migrate dev
+# Run migrations
+npx prisma migrate deploy
 
 # Seed database with test data
 npx tsx scripts/seed.ts
@@ -142,6 +151,8 @@ npx tsx scripts/test-resume-analyzer.ts
 ```bash
 npm run dev
 ```
+
+Visit `http://localhost:3000` for the dashboard UI, which exercises the API endpoints below.
 
 The API endpoints will be available at:
 
@@ -184,20 +195,28 @@ POST /api/career/insights
 
 ```
 ├── app/
-│   └── api/
-│       ├── career/insights/    # Career insights generation
-│       ├── jobs/match/         # Job matching logic
-│       └── resume/             # Resume analysis
+│   ├── api/
+│   │   ├── career/insights/    # Career insights generation
+│   │   ├── jobs/match/         # Job matching logic
+│   │   └── resume/             # Resume analysis
+│   ├── ui/
+│   │   └── dashboard.tsx       # Client component driving all 3 endpoints
+│   ├── layout.tsx              # Root layout
+│   ├── page.tsx                # Dashboard page (Server Component)
+│   └── globals.css             # Tailwind entry point
 ├── lib/
 │   ├── errorHandler.ts         # Centralized error handling
 │   ├── prisma.ts              # Prisma client singleton
 │   └── resumeAnalyzer.ts      # Claude resume analysis
 ├── prisma/
 │   ├── schema.prisma          # Database schema
-│   └── dev.db                 # SQLite database file
+│   └── migrations/            # PostgreSQL migrations
 ├── scripts/
 │   ├── seed.ts                # Database seeding script
 │   └── test-resume-analyzer.ts # Resume analyzer test script
+├── __tests__/                  # Vitest suite
+├── docs/
+│   └── CHANGELOG.md           # Dated record of notable changes
 └── public/                    # Static assets
 ```
 
@@ -208,36 +227,19 @@ POST /api/career/insights
 - All API endpoints include comprehensive validation
 - Database queries are logged in development mode
 - Error handling provides detailed error messages for debugging
-- SQLite used for local development (can migrate to PostgreSQL for production)
-- Array fields stored as JSON strings to accommodate SQLite limitations
+- PostgreSQL via a local Supabase stack for local development
+- Array fields stored as JSON strings — a holdover from an earlier SQLite iteration
 
 ## Recent Changes
 
-**Database Migration**
-
-- Migrated from PostgreSQL to SQLite for local development
-- Updated schema to store array fields as JSON strings (skillTags, keySkillsNeeded, nextSteps)
-- Created dev.db SQLite database file
-- Updated environment configuration for SQLite
-
-**New Development Tools**
-
-- Added seed.ts script for populating database with test data
-- Added test-resume-analyzer.ts for standalone Claude API testing
-- Included tsx for running TypeScript scripts
-
-**Testing Infrastructure**
-
-- Created test user (noah@example.com) with ID: test-user-001
-- Added 3 sample job listings for testing API endpoints
-- Seed script outputs test data IDs for easy Postman/testing reference
+See [`docs/CHANGELOG.md`](docs/CHANGELOG.md) for a dated, per-commit record of notable changes, including the database migration history, testing infrastructure, and the frontend UI build-out.
 
 ## Next Steps
 
 **Immediate Priorities**
 
-1. Build frontend UI for resume upload and analysis display
-2. Create dashboard for viewing job matches and career insights
+1. Get a valid `ANTHROPIC_API_KEY` into `.env` and verify the three AI endpoints end-to-end (currently blocked — see `docs/CHANGELOG.md`)
+2. Replace the mocked-up dashboard with a real design system
 3. Implement job search and filtering interface
 
-**Future Enhancements** 4. Implement job listing scraping from TokyoDev/JapanDev 5. Add user authentication (NextAuth.js or similar) 6. Add file upload for PDF/DOCX resumes 7. Migrate to PostgreSQL for production deployment 8. Add email notifications for job matches 9. Integrate Japanese language learning resources 10. Add visa application guidance features
+**Future Enhancements** 4. Implement job listing scraping from TokyoDev/JapanDev 5. Add user authentication (NextAuth.js or similar) 6. Add file upload for PDF/DOCX resumes 7. Add email notifications for job matches 8. Integrate Japanese language learning resources 9. Add visa application guidance features
