@@ -18,6 +18,7 @@ This project helps foreign professionals navigate the Japanese job market by:
 - **Styling**: TailwindCSS 3.4
 - **Database**: PostgreSQL (via local Supabase stack) with Prisma ORM 5.19
 - **AI**: Anthropic Claude API (claude-sonnet-4-6)
+- **Auth**: NextAuth.js / Auth.js v5 (credentials provider, JWT sessions), bcryptjs password hashing
 - **Validation**: Zod 4.4.3
 - **Script Execution**: tsx 4.23.0
 
@@ -28,7 +29,7 @@ This project helps foreign professionals navigate the Japanese job market by:
 **Backend API Infrastructure**
 
 - Database schema with 6 models: User, Resume, JobListing, JobInsight, JobMatch, CareerInsight
-- SQLite database for local development (dev.db)
+- PostgreSQL (local Supabase stack) for local development
 - Prisma client configuration with query logging
 - Centralized error handling utilities
 
@@ -39,11 +40,19 @@ This project helps foreign professionals navigate the Japanese job market by:
 - Test user and sample job listings for API testing
 - Vitest suite covering all three API routes (`npm test`)
 
-**Frontend UI (dev-build test harness)**
+**Frontend UI**
 
-- Single-page dashboard (`app/page.tsx` + `app/ui/dashboard.tsx`) exercising all three API endpoints: resume analysis, per-job matching, and career insights generation
+- Multi-page app with a shared nav (`app/ui/nav.tsx`): `/` (home), `/resume`, `/jobs`, `/insights`, `/profile`, plus `/login` and `/register`
 - Job listings are read directly from the database in a Server Component; mutations go through the real API routes via `fetch`
-- Deliberately minimal styling — this is a working end-to-end harness, not a final design. See `docs/CHANGELOG.md` for details.
+- Simple, consistent styling reusing the existing Tailwind CSS-variable palette (`app/globals.css`) — not a full design system. See `docs/CHANGELOG.md` for details.
+
+**Authentication & Profile Management**
+
+- NextAuth.js v5 (Auth.js) credentials provider, JWT sessions, bcrypt-hashed passwords (`lib/auth.ts`)
+- `POST /api/auth/register` for account creation; `/login` and `/register` pages
+- Route protection via `proxy.ts` (Next 16 renamed `middleware.ts` to `proxy.ts`) redirects unauthenticated page requests to `/login`; every API route independently checks the session and returns 401 rather than relying on the proxy matcher alone
+- `/profile` page + `GET`/`PATCH /api/profile` for basic name/email editing
+- The three AI endpoints below now derive `userId` from the authenticated session instead of a client-supplied `userId` field
 
 **AI-Powered Endpoints**
 
@@ -51,7 +60,7 @@ This project helps foreign professionals navigate the Japanese job market by:
   - Extracts years of experience, education level, technical skills
   - Identifies Japanese language proficiency (JLPT level)
   - Uses Claude structured outputs for consistent data extraction
-  - Stores analysis in SQLite database
+  - Stores analysis in the database
 
 - `POST /api/jobs/match` - Job matching endpoint
   - Compares user resume against specific job listings
@@ -69,23 +78,11 @@ This project helps foreign professionals navigate the Japanese job market by:
 
 ### 🚧 In Progress / Planned Features
 
-**Frontend UI polish**
-
-- Replace the current mocked-up dashboard with a real design system
-- Multi-page navigation instead of a single scrolling page
-- User profile management
-
 **Job Data Ingestion**
 
 - Scrapers for TokyoDev and JapanDev job boards
 - Automated job listing updates
 - Job insight generation pipeline
-
-**User Management**
-
-- User authentication system
-- User registration/login flows
-- Profile management
 
 **Additional Features**
 
@@ -108,10 +105,11 @@ The application uses PostgreSQL (a local Supabase stack in development) with the
 
 ## Environment Variables
 
-Required environment variables (see `.env` for reference):
+Required environment variables (see `.env.example` for reference):
 
 - `DATABASE_URL` - PostgreSQL connection string (local Supabase default: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`)
 - `ANTHROPIC_API_KEY` - Claude API key for AI features
+- `AUTH_SECRET` - Secret used to sign NextAuth session tokens. Generate with `npx auth secret`
 
 ## Getting Started
 
@@ -152,7 +150,7 @@ npx tsx scripts/test-resume-analyzer.ts
 npm run dev
 ```
 
-Visit `http://localhost:3000` for the dashboard UI, which exercises the API endpoints below.
+Visit `http://localhost:3000` and register a new account, or sign in with the seeded test user (`noah@example.com` / `password123`, printed by `scripts/seed.ts`).
 
 The API endpoints will be available at:
 
@@ -162,13 +160,14 @@ The API endpoints will be available at:
 
 ## API Usage Examples
 
+All three endpoints below require an authenticated session (the NextAuth session cookie) — `userId` is derived server-side from the session rather than passed in the request body.
+
 ### Analyze Resume
 
 ```bash
 POST /api/resume
 {
-  "resumeText": "Your resume content here...",
-  "userId": "user-id-here"
+  "resumeText": "Your resume content here..."
 }
 ```
 
@@ -177,7 +176,6 @@ POST /api/resume
 ```bash
 POST /api/jobs/match
 {
-  "userId": "user-id-here",
   "jobListingId": "job-listing-id-here"
 }
 ```
@@ -186,28 +184,39 @@ POST /api/jobs/match
 
 ```bash
 POST /api/career/insights
-{
-  "userId": "user-id-here"
-}
 ```
+
+**Note**: `japan-career-navigator.postman_collection.json` still sends the old `userId`-in-body shape and hasn't been updated for cookie-based auth — a known gap, out of scope for this change.
 
 ## Project Structure
 
 ```
 ├── app/
+│   ├── (auth)/
+│   │   ├── login/page.tsx      # Sign-in form
+│   │   └── register/page.tsx   # Registration form
 │   ├── api/
+│   │   ├── auth/[...nextauth]/ # NextAuth route handler
+│   │   ├── auth/register/      # Account creation
 │   │   ├── career/insights/    # Career insights generation
 │   │   ├── jobs/match/         # Job matching logic
+│   │   ├── profile/            # Profile GET/PATCH
 │   │   └── resume/             # Resume analysis
+│   ├── resume/, jobs/, insights/, profile/  # Feature pages (Server Component + client form/list)
 │   ├── ui/
-│   │   └── dashboard.tsx       # Client component driving all 3 endpoints
+│   │   └── nav.tsx             # Shared nav bar
+│   ├── providers.tsx           # SessionProvider wrapper
 │   ├── layout.tsx              # Root layout
-│   ├── page.tsx                # Dashboard page (Server Component)
+│   ├── page.tsx                # Authenticated home page (Server Component)
 │   └── globals.css             # Tailwind entry point
 ├── lib/
+│   ├── auth.ts                 # NextAuth config (credentials provider, JWT sessions)
 │   ├── errorHandler.ts         # Centralized error handling
 │   ├── prisma.ts              # Prisma client singleton
 │   └── resumeAnalyzer.ts      # Claude resume analysis
+├── types/
+│   └── next-auth.d.ts          # Session/JWT type augmentation
+├── proxy.ts                    # Route protection (Next 16's `middleware.ts` replacement)
 ├── prisma/
 │   ├── schema.prisma          # Database schema
 │   └── migrations/            # PostgreSQL migrations
@@ -238,8 +247,14 @@ See [`docs/CHANGELOG.md`](docs/CHANGELOG.md) for a dated, per-commit record of n
 
 **Immediate Priorities**
 
-1. Get a valid `ANTHROPIC_API_KEY` into `.env` and verify the three AI endpoints end-to-end (currently blocked — see `docs/CHANGELOG.md`)
-2. Replace the mocked-up dashboard with a real design system
-3. Implement job search and filtering interface
+1. Add credits to the Anthropic account behind `ANTHROPIC_API_KEY` and verify the three AI endpoints end-to-end. The key itself now authenticates correctly; the only remaining blocker is account billing (`invalid_request_error: Your credit balance is too low`) — see `docs/CHANGELOG.md`
+2. Implement job search and filtering interface
 
-**Future Enhancements** 4. Implement job listing scraping from TokyoDev/JapanDev 5. Add user authentication (NextAuth.js or similar) 6. Add file upload for PDF/DOCX resumes 7. Add email notifications for job matches 8. Integrate Japanese language learning resources 9. Add visa application guidance features
+**Future Enhancements**
+
+3. Implement job listing scraping from TokyoDev/JapanDev
+4. Add file upload for PDF/DOCX resumes
+5. Add email notifications for job matches
+6. Integrate Japanese language learning resources
+7. Add visa application guidance features
+8. Harden the credentials auth flow for real production use (rate limiting, account lockout, password reset) — the current implementation is a reasonable baseline, not production-hardened

@@ -1,33 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { analyzeResume } from "@/lib/resumeAnalyzer";
-import { handleError, ValidationError } from "@/lib/errorHandler";
+import { auth } from "@/lib/auth";
+import { handleError, UnauthorizedError, ValidationError } from "@/lib/errorHandler";
 
 export async function POST(request: NextRequest) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new UnauthorizedError();
+        const userId = session.user.id;
+
         const body = await request.json();
-        const { resumeText, userId } = body;
+        const { resumeText } = body;
 
         // Validation
         if (!resumeText || typeof resumeText !== "string") {
             throw new ValidationError("resumeText is required and must be a string");
         }
 
-        if (!userId || typeof userId !== "string") {
-            throw new ValidationError("userId is required and must be a string");
-        }
-
         if (resumeText.trim().length < 50) {
             throw new ValidationError("Resume text must be at least 50 characters");
-        }
-
-        // Check user exists
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-        });
-
-        if (!user) {
-            throw new ValidationError("User not found", { userId });
         }
 
         // Analyze resume with Claude

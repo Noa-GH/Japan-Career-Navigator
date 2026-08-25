@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../helpers/mockPrisma";
+import { mockSession } from "../helpers/mockAuth";
 import { buildRequest } from "../helpers/buildRequest";
 import { mockAnthropicResponse } from "../helpers/mockAnthropic";
 
@@ -15,7 +16,7 @@ vi.mock("@anthropic-ai/sdk", () => ({
 
 import { POST } from "@/app/api/jobs/match/route";
 
-const validBody = { userId: "user-1", jobListingId: "job-1" };
+const validBody = { jobListingId: "job-1" };
 
 const baseResume = {
     id: "resume-1",
@@ -47,15 +48,20 @@ const baseJobListing = {
 describe("POST /api/jobs/match", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockSession("user-1");
     });
 
-    it("returns 400 when userId is missing", async () => {
-        const res = await POST(buildRequest({ jobListingId: "job-1" }));
-        expect(res.status).toBe(400);
+    it("returns 401 when unauthenticated", async () => {
+        mockSession(null);
+
+        const res = await POST(buildRequest(validBody));
+        expect(res.status).toBe(401);
+        const json = await res.json();
+        expect(json.error.type).toBe("UnauthorizedError");
     });
 
     it("returns 400 when jobListingId is missing", async () => {
-        const res = await POST(buildRequest({ userId: "user-1" }));
+        const res = await POST(buildRequest({}));
         expect(res.status).toBe(400);
     });
 
