@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Providers from "./providers";
+import Nav from "./ui/nav";
 
 export const metadata: Metadata = {
     title: "Japan Career Navigator",
@@ -14,7 +16,10 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] antialiased">
-                {children}
+                <Providers>
+                    <Nav />
+                    {children}
+                </Providers>
             </body>
         </html>
     );

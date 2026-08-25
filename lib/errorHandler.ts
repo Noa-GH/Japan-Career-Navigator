@@ -32,6 +32,20 @@ export class InternalServerError extends APIError {
     }
 }
 
+export class UnauthorizedError extends APIError {
+    constructor(message = "Authentication required") {
+        super(401, message);
+        this.name = "UnauthorizedError";
+    }
+}
+
+export class ConflictError extends APIError {
+    constructor(message: string, details?: unknown) {
+        super(409, message, details);
+        this.name = "ConflictError";
+    }
+}
+
 export function handleError(error: unknown) {
     console.error("[API Error]", error);
 

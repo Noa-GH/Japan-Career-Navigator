@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { handleError, ValidationError, NotFoundError } from "@/lib/errorHandler";
+import { auth } from "@/lib/auth";
+import { handleError, UnauthorizedError, ValidationError, NotFoundError } from "@/lib/errorHandler";
 import Anthropic from "@anthropic-ai/sdk";
 
 export async function POST(request: NextRequest) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new UnauthorizedError();
+        const userId = session.user.id;
+
         const body = await request.json();
-        const { userId, jobListingId } = body;
+        const { jobListingId } = body;
 
         // Validation
-        if (!userId || typeof userId !== "string") {
-            throw new ValidationError("userId is required");
-        }
-
         if (!jobListingId || typeof jobListingId !== "string") {
             throw new ValidationError("jobListingId is required");
         }

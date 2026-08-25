@@ -1,4 +1,7 @@
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+
+const TEST_USER_PASSWORD = "password123";
 
 async function main() {
     console.log("🌱 Seeding database...\n");
@@ -17,6 +20,7 @@ async function main() {
             id: "test-user-001",
             email: "noah@example.com",
             name: "Noah Test",
+            password: await bcrypt.hash(TEST_USER_PASSWORD, 10),
         },
     });
     console.log("✅ Created user:", user.email);
@@ -75,6 +79,7 @@ async function main() {
     );
     console.log("Test user ID:", user.id);
     console.log("Test user email:", user.email);
+    console.log("Test user password:", TEST_USER_PASSWORD);
     console.log("Job 1 ID:", job1.id);
     console.log("Job 2 ID:", job2.id);
     console.log("Job 3 ID:", job3.id);

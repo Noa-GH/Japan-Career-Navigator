@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../helpers/mockPrisma";
-import { buildRequest } from "../helpers/buildRequest";
+import { mockSession } from "../helpers/mockAuth";
 import { mockAnthropicResponse } from "../helpers/mockAnthropic";
 
 const mockInsightResponse = vi.hoisted(() => ({
@@ -14,8 +14,6 @@ vi.mock("@anthropic-ai/sdk", () => ({
 }));
 
 import { POST } from "@/app/api/career/insights/route";
-
-const validBody = { userId: "user-1" };
 
 const baseResume = {
     id: "resume-1",
@@ -57,17 +55,22 @@ const baseJobMatch = {
 describe("POST /api/career/insights", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockSession("user-1");
     });
 
-    it("returns 400 when userId is missing", async () => {
-        const res = await POST(buildRequest({}));
-        expect(res.status).toBe(400);
+    it("returns 401 when unauthenticated", async () => {
+        mockSession(null);
+
+        const res = await POST();
+        expect(res.status).toBe(401);
+        const json = await res.json();
+        expect(json.error.type).toBe("UnauthorizedError");
     });
 
     it("returns 400 when the user has no resume", async () => {
         prismaMock.resume.findUnique.mockResolvedValue(null);
 
-        const res = await POST(buildRequest(validBody));
+        const res = await POST();
         expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error.message).toMatch(/no resume/i);
@@ -77,7 +80,7 @@ describe("POST /api/career/insights", () => {
         prismaMock.resume.findUnique.mockResolvedValue(baseResume as any);
         prismaMock.jobMatch.findMany.mockResolvedValue([]);
 
-        const res = await POST(buildRequest(validBody));
+        const res = await POST();
         expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error.message).toMatch(/no job matches/i);
@@ -96,7 +99,7 @@ describe("POST /api/career/insights", () => {
             updatedAt: new Date(),
         } as any);
 
-        const res = await POST(buildRequest(validBody));
+        const res = await POST();
         expect(res.status).toBe(200);
 
         const json = await res.json();

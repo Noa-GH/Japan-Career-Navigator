@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../helpers/mockPrisma";
+import { mockSession } from "../helpers/mockAuth";
 import { buildRequest } from "../helpers/buildRequest";
 
 vi.mock("@/lib/resumeAnalyzer", () => ({
@@ -10,50 +11,39 @@ import { POST } from "@/app/api/resume/route";
 import { analyzeResume } from "@/lib/resumeAnalyzer";
 
 const validBody = {
-    userId: "user-1",
     resumeText: "x".repeat(60),
 };
 
 describe("POST /api/resume", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockSession("user-1");
+    });
+
+    it("returns 401 when unauthenticated", async () => {
+        mockSession(null);
+
+        const res = await POST(buildRequest(validBody));
+        expect(res.status).toBe(401);
+        const json = await res.json();
+        expect(json.error.type).toBe("UnauthorizedError");
     });
 
     it("returns 400 when resumeText is missing", async () => {
-        const res = await POST(buildRequest({ userId: "user-1" }));
-        expect(res.status).toBe(400);
-        const json = await res.json();
-        expect(json.error.type).toBe("ValidationError");
-    });
-
-    it("returns 400 when userId is missing", async () => {
-        const res = await POST(buildRequest({ resumeText: "x".repeat(60) }));
+        const res = await POST(buildRequest({}));
         expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error.type).toBe("ValidationError");
     });
 
     it("returns 400 when resumeText is under 50 characters", async () => {
-        const res = await POST(
-            buildRequest({ userId: "user-1", resumeText: "too short" })
-        );
+        const res = await POST(buildRequest({ resumeText: "too short" }));
         expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error.message).toMatch(/at least 50 characters/i);
     });
 
-    it("returns 400 when the user does not exist", async () => {
-        prismaMock.user.findUnique.mockResolvedValue(null);
-
-        const res = await POST(buildRequest(validBody));
-        expect(res.status).toBe(400);
-        const json = await res.json();
-        expect(json.error.message).toBe("User not found");
-        expect(json.error.details).toEqual({ userId: "user-1" });
-    });
-
     it("analyzes, upserts, and returns 200 with parsed skills on success", async () => {
-        prismaMock.user.findUnique.mockResolvedValue({ id: "user-1" } as any);
         vi.mocked(analyzeResume).mockResolvedValue({
             yearsOfExperience: 5,
             educationLevel: "Bachelor's",
@@ -92,7 +82,6 @@ describe("POST /api/resume", () => {
     });
 
     it("returns 500 when the Claude analyzer throws", async () => {
-        prismaMock.user.findUnique.mockResolvedValue({ id: "user-1" } as any);
         vi.mocked(analyzeResume).mockRejectedValue(new Error("Claude API failed"));
 
         const res = await POST(buildRequest(validBody));

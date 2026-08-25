@@ -1,17 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { handleError, ValidationError } from "@/lib/errorHandler";
+import { auth } from "@/lib/auth";
+import { handleError, UnauthorizedError, ValidationError } from "@/lib/errorHandler";
 import Anthropic from "@anthropic-ai/sdk";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
     try {
-        const body = await request.json();
-        const { userId } = body;
-
-        // Validation
-        if (!userId || typeof userId !== "string") {
-            throw new ValidationError("userId is required");
-        }
+        const session = await auth();
+        if (!session?.user?.id) throw new UnauthorizedError();
+        const userId = session.user.id;
 
         // Fetch user's resume
         const resume = await prisma.resume.findUnique({
